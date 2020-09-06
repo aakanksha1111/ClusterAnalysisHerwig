@@ -1,0 +1,262 @@
+########################################################################################################################################################
+
+########################################################################################################################################################
+
+############################ Report on How to Generate Data Of Primary Clusters decaying into 2 Particles/Hadrons Using Herwig  ########################
+
+########################################################################################################################################################
+
+
+############################ All the Necessary Files along with this file of instructions can be found at following public Git-Hub Repository ##########
+
+
+############################ https://github.com/CpSquared/ClusterAnalysisHerwig        #################################################################
+
+
+########################################################################################################################################################
+
+
+############################ Project By :  Chaitanya Paranjape - chaitanyaparanjape614@gmail.com     ###################################################
+
+############################               Aakanksha Dwivedi   - daakanksha1111@gmail.com            ###################################################
+
+########################################################################################################################################################
+
+############################ Supervisor :  dr Andrzej Siodmok  - andrzej.siodmok@cern.ch     ###########################################################
+
+############################            :  http://siodmok.web.cern.ch/siodmok/personal.html  ###########################################################
+
+########################################################################################################################################################
+
+
+
+
+1. Assume :  $HERWIGPATH$ : Is the directory where Herwig is installed  - Location of Installation. 
+
+   Herwig 7.2 was used for this Project, so be careful if you are using any different version.
+ 
+
+2. We want to create a custom Analysis to extract the required data related to cluster decays. We will do it in our working directory where $HERWIGPATH$ is present. 
+
+   There are two Methods to create Foo.cc and Foo.h files for our custom analysis.   
+
+   Method 1 : 
+
+        - follow Section " B.6 Setting up an AnalysisHandler " of  https://arxiv.org/pdf/0803.0883.pdf , to create basic framework for Analysis, 
+         
+          where Foo.cc, Foo.h files are produced and compiled to give Foo.so 
+
+        - Modify the Codes of Foo.cc and Foo.h according to our needs ( Codes provided later ) 
+
+   Method 2 : 
+
+        - Copy the two files " BasicConsistency.cc " and " BasicConsistency.h " into our working directory. 
+       
+          These two files are present at :  $HERWIGPATH$/src/Herwig-7.2.1/Analysis 
+
+        - Rename both files as Foo.cc and Foo.h and modify their contents according to our needs. ( Codes provided later ) 
+
+
+
+3. Codes for Foo.cc and Foo.h Files are given at following GitHub links ( according to our task defined at start of this report ): 
+
+   Code for Foo.cc :       https://github.com/CpSquared/ClusterAnalysisHerwig/blob/master/Foo.cc
+
+   Code for Foo.h :        https://github.com/CpSquared/ClusterAnalysisHerwig/blob/master/Foo.h
+
+
+
+
+4. Consider the file " Makefile-UserModules " which is at location $HERWIGPATH$/share/Herwig/ 
+
+   Copy the contets of this file into a file called " Makefile " into our working directory. 
+
+   ( Link for this Makefile which you can directly get from here : https://github.com/CpSquared/ClusterAnalysisHerwig/blob/master/Makefile )
+
+
+
+
+5. Once you have Appropriate Foo.cc and Foo.h ( with modifiied code of our needs ) and " Makefile " in working directory, 
+
+   Simply enter the command " make " into the terminal. ( $ make )
+
+   It should compile the files to produce " Foo.so " in same directory. ( Link for the Foo.so file : https://github.com/CpSquared/ClusterAnalysisHerwig/blob/master/Foo.so )
+
+
+
+
+6. Copy this Foo.so file into this location : $HERWIGPATH$/lib/Herwig/ 
+
+   
+  
+
+7. Now to Simulate events, There are Different files to simulate particle collisions in :   $HERWIGPATH$/share/Herwig/  
+
+   We will consider ' LEP.in ' for our analysis. 
+
+
+
+8. Not to interfere with already provided LEP.in file, make a copy of the file with name " LEP_new.in " to make all the changes. ( in the same location as LEP.in )
+
+
+
+
+9. In the file " LEP_new.in "  Consider the section with following lines
+
+  
+   ##################################################
+   ## prepare for Rivet analysis or HepMC output
+   ## when running with parton shower
+   ##################################################
+   #read snippets/Rivet.in
+   #insert /Herwig/Analysis/Rivet:Analyses 0 XXX_2015_ABC123
+   #read snippets/HepMC.in
+   #set /Herwig/Analysis/HepMC:PrintEvent NNN
+
+
+  Right after this, enter following  lines to make effect of our analysis 
+
+  
+  cd /Herwig/Analysis
+
+  create MyName::Foo foo Foo.so
+  insert /Herwig/Generators/EventGenerator:AnalysisHandlers 0 foo
+  cd /Herwig/Generators
+
+  
+  After this, there will be one line " saverun LEP EventGenerator " 
+
+  Change that line to " saverun LEP_new EventGenerator "
+
+  Save the changes and come back to working directory.  ( Link for the LEP_new.in file : https://github.com/CpSquared/ClusterAnalysisHerwig/blob/master/LEP_new.in )
+
+
+
+
+
+10. Now you have made all the changes, we are ready to generate events and store data. 
+
+
+
+
+11. in working directory enter, " $ source $HERWIGPATH$/bin/activate "    
+
+    This will activate Herwig environment.  ( use later $ deactivate  , to deactivate it)
+
+    Now do " Herwig read LEP_new.in " 
+
+    And then " Herwig run LEP_new.run -N 100 -s 6541634 "  ( N is number of events and s is seed for random generation )
+
+    This will create a file " C2P_new.csv " in working directory, which will have data of Primary cluster and the two particles it decays into like following : 
+
+    
+    Event number, PDG ID, E, px, py, pz, Mass, (px)^2 + (py)^2 + (pz)^2 + (Mass)^2 - (E)^2   ### 8 variables of Primary Cluster ( in MeV scale )
+    Event number, PDG ID, E, px, py, pz, Mass, (px)^2 + (py)^2 + (pz)^2 + (Mass)^2 - (E)^2   ### 8 variables of 1st Particle    ( in MeV scale )
+    Event number, PDG ID, E, px, py, pz, Mass, (px)^2 + (py)^2 + (pz)^2 + (Mass)^2 - (E)^2   ### 8 variables of 2nd Particle    ( in MeV scale )
+
+
+    This .csv file can be easily imported as numpy array for further analysis of data.
+
+ 
+   NOTE : The C2P_new.csv file is always opened in append mode (you can change the code if you want), 
+
+           so be careful about the order of stored data or just use new files for every new run.
+
+
+12. You can repeat step 11 again again and again to generate more and more data.
+
+
+########################################################################################################################################################
+
+########################################################################################################################################################
+
+########################################################################################################################################################
+
+
+  If you just want to generate data without looking into all of the procedure, 
+
+      Download the Foo.so file from same Git-Hub Repository 
+
+            ( Link for the Foo.so file : https://github.com/CpSquared/ClusterAnalysisHerwig/blob/master/Foo.so )
+
+            Copy this Foo.so file into this location : $HERWIGPATH$/lib/Herwig/ 
+ 
+
+      Download the LEP_new.in file from same Git-Hub Repository
+          
+            ( Link for the LEP_new.in file : https://github.com/CpSquared/ClusterAnalysisHerwig/blob/master/LEP_new.in )
+
+            Copy this LEP_new.in file into this location : $HERWIGPATH$/share/Herwig/
+
+
+      And now you can directly follow step 11             
+
+
+########################################################################################################################################################
+
+############################# References for All the Documentation and Codes of the Project ############################################################
+
+########################################################################################################################################################
+
+########################################################################################################################################################
+
+############################# Herwig :  Multi-Purpose Particle Physics Event Generator   ###############################################################  
+
+#############################        :  https://herwig.hepforge.org/          ##########################################################################
+
+########################################################################################################################################################
+
+########################################################################################################################################################
+
+############################# ThePEG : This is the reference manual for Toolkit for High Energy Physics Event Generation   #############################
+
+#############################     : https://thepeg.hepforge.org/doxygen/    ############################################################################
+
+########################################################################################################################################################
+
+########################################################################################################################################################
+
+#################################################                 THANK YOU                #############################################################
+
+########################################################################################################################################################
+
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
